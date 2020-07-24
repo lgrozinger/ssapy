@@ -1,0 +1,6 @@
+prey > prey + prey @ 10.0
+prey + predator > predator + predator @ 0.01
+predator > _ @ 10.0
+
+prey = 1000
+predator = 1000
