@@ -150,7 +150,7 @@ REACTION *pq_insert(PQ *pq, REACTION *reaction)
 REACTION *pq_delete(PQ *pq, REACTION *victim)
 {
 	int32_t victimpos = victim->heappos;
-	if (pq->size > 1) {
+	if (pq->size > 1 && victimpos != pq->size - 1) {
 		swap(pq, victim, pq->heap[pq->size - 1]);
 		pq->size -= 1;
 		pq->heap[pq->size] = NULL;
@@ -159,7 +159,7 @@ REACTION *pq_delete(PQ *pq, REACTION *victim)
 	} else {
 		pq->size -= 1;
 		pq->heap[pq->size] = NULL;
-		victim ->heappos = -1;
+		victim->heappos = -1;
 	}
 	return victim;
 }

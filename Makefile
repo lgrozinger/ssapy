@@ -13,18 +13,18 @@ build/%.o:%.c $(DEPS)
 build : $(OBJS)
 	$(CC) -shared -o libssa.so $(OBJS) $(LDFLAGS)
 
-nrmeg : nrmeg.c
-	$(CC) $(CFLAGS) -o nrm lib/src/nrmeg.c $(LDFLAGS) -L. -Wl,-rpath=. -lssa
+# nrmeg : nrmeg.c
+# 	$(CC) $(CFLAGS) -o nrm lib/src/nrmeg.c $(LDFLAGS) -L. -Wl,-rpath=. -lssa
 
-dmeg : dmeg.c
-	$(CC) -Wall -g -I. -o dm dmeg.c $(LDFLAGS) -lssa
+# dmeg : dmeg.c
+# 	$(CC) -Wall -g -I. -o dm dmeg.c $(LDFLAGS) -lssa
 
-# .PHONY : test
-# test :
-# 	$(CC) $(CFLAGS) -o check_llist test/check_llist.c src/llist.c -lcheck -lm -lrt -lpthread -lsubunit
-# 	$(CC) $(CFLAGS) -o check_pq test/check_priorityq.c src/priorityq.c src/llist.c -lcheck -lm -lrt -lpthread -lsubunit	
-# 	./check_llist
-# 	./check_pq
+.PHONY : test
+test :
+	$(CC) $(CFLAGS) -o check_llist lib/test/check_llist.c lib/src/llist.c -lcheck -lm -lrt -lpthread -lsubunit
+	$(CC) $(CFLAGS) -o check_pq lib/test/check_priorityq.c lib/src/priorityq.c lib/src/llist.c -lcheck -lm -lrt -lpthread -lsubunit	
+	./check_llist
+	./check_pq
 
 .PHONY : clean
 clean :
