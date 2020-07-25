@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-Wall -g -fPIC -I. -Ilib/include
 LDFLAGS=-lm -lgsl -lgslcblas
-UNITS = depgraph llist priorityq dm ssa
+UNITS = depgraph llist priorityq dm nrm ssa
 HEADERS = $(patsubst %, lib/include/%.h, $(UNITS))
 OBJS = $(patsubst %, build/%.o, $(UNITS)) 
 VPATH = lib/src/ lib/include
@@ -14,7 +14,7 @@ build : $(OBJS)
 	$(CC) -shared -o libssa.so $(OBJS) $(LDFLAGS)
 
 nrmeg : nrmeg.c
-	$(CC) -Wall -g -I. -o nrm nrmeg.c $(LDFLAGS) -lssa
+	$(CC) $(CFLAGS) -o nrm lib/src/nrmeg.c $(LDFLAGS) -L. -Wl,-rpath=. -lssa
 
 dmeg : dmeg.c
 	$(CC) -Wall -g -I. -o dm dmeg.c $(LDFLAGS) -lssa

@@ -6,8 +6,7 @@ import os
 from networks import ReactionNetwork
 
 
-cdll.LoadLibrary('./libssa.so')
-libssa = CDLL('libssa.so')
+libssa = CDLL('./libssa.so')
 
 
 def wrap2d(array, ctype):
@@ -32,14 +31,14 @@ def directmethod(reactionnetwork, T):
 
 
 def nextreactionmethod(reactionnetwork, T):
-    R = reactionnetwork.foreignR
-    P = reactionnetwork.foreignP
-    x = reactionnetwork.foreignx
-    k = reactionnetwork.foreignk
-    n = reactionnetwork.n
-    m = reactionnetwork.m
-    steps = reactionnetwork.foreignsteps
-    libssa.ssa_nrm(R, P, n, m, k, x, steps, c_double(T))
+    R = wrap2d(reactionnetwork.R, c_uint)
+    P = wrap2d(reactionnetwork.P, c_uint)
+    X = wrap1d(reactionnetwork.X, c_uint)
+    k = wrap1d(reactionnetwork.k, c_double)
+    n = c_uint(len(reactionnetwork.X))
+    m = c_uint(len(reactionnetwork.R))
+    steps = wrap1d(reactionnetwork.steps, c_uint)
+    libssa.ssa_nrm(R, P, n, m, k, X, steps, c_double(T))
 
 
 parser = argparse.ArgumentParser(description='Simulate chemical reaction networks.')

@@ -4,10 +4,11 @@
 #include "priorityq.h"
 
 
-REACTION *reaction_make()
+REACTION *reaction_make(INDEX number)
 {
 	REACTION *new = malloc(sizeof(REACTION));
 	new->affects = NULL;
+	new->number = number;
 	new->heappos = -1;
 	return new;
 }

@@ -68,3 +68,7 @@ class ReactionNetwork:
     @property
     def k(self):
         return [rate for _, _, rate, _ in self.reactions]
+
+    @property
+    def steps(self):
+        return [step for _, _, _, step in self.reactions]

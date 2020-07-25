@@ -41,10 +41,10 @@ typedef struct priorityqueue{
 
 PQ *pq_make();
 void pq_free(PQ*);
-REACTION *reaction_make();
+REACTION *reaction_make(INDEX number);
 void reaction_free(REACTION*);
 
-/* attributes
+/* attributes */
 char pq_isempty(PQ*);
 REACTION *pq_min(PQ*);
 

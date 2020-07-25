@@ -18,81 +18,79 @@
 const gsl_rng_type *SSARNGT;
 gsl_rng *SSARNG;
 
-const INDEX N;
-const INDEX M;
-
-/* mutate `x`, the vector of molecule counts, according to `v`, the
-stoichiometry vector of the reaction to be performed. */
-void nrm_doreaction(INDEX *v, COUNT *x)
+void update_reaction
+(PQ *pq,
+ REACTION *r,
+ INDEX **R,
+ double *propensities,
+ double *k,
+ COUNT *steps,
+ COUNT *x,
+ INDEX n,
+ double t)
 {
-	INDEX i;
-	for (i = 0; i < N; i++)
-		x[i] += v[i];
-}
+	double newp = ssa_h(R[r->number], x, n) * k[r->number];
+	double oldp = propensities[r->number];
 
-/* compute the number of ways the reactants in `r` can combine, based
-on their counts in `x` */
-uint32_t nrm_h(INDEX *r, COUNT *x, INDEX n)
-{
-	uint32_t c = 1;
-	INDEX i, j;
-	for(i = 0; i < n; i++)
-		for(j = 0; j < r->reactants[i]; j++)
-			c *= x[i] - j;
-	return c;
-}
-
-double calculate_new_tau(INDEX *r, 
-
-void update_reaction(PQ *pq, REACTION *r, COUNT *x, INDEX n, double t)
-{
-	double p = nrm_h(r, x, n) * r->rate;
-	if (p > 0.0) {
-		if (r->propensity > 0.0) {
-			r->propensity = p;
-			pq_update(pq, r, (r->propensity / p) * (r->tau - t) + t);
+	if (newp > 0.0) {
+		if (oldp > 0.0) {
+			pq_update(pq, r, (oldp / newp) * (r->tau - t) + t);
 		} else {
-			r->propensity = p;
-			r->tau = gsl_ran_gamma(SSARNG, r->steps, 1 / p) + t;
+			r->tau = gsl_ran_gamma(SSARNG, steps[r->number], 1 / newp) + t;
 			pq_insert(pq, r);
 		}
-	} else if (r->propensity > 0.0) {
+	} else if (oldp > 0.0) {
 		pq_delete(pq, r);
 	}
+
+	propensities[r->number] = newp;
 }
 
 
-double ssa_nrmstep(INDEX n, INDEX m, INDEX **R, INDEX **P, COUNT *x, PQ *pq)
+/* 				  void update_reaction(PQ *pq, REACTION *r, INDEX **R, COUNT *x, INDEX n, double t) */
+/* { */
+/* 	double p = ssa_h(r, x, n) * r->rate; */
+/* 	if (p > 0.0) { */
+/* 		if (r->propensity > 0.0) { */
+/* 			r->propensity = p; */
+/* 			pq_update(pq, r, (r->propensity / p) * (r->tau - t) + t); */
+/* 		} else { */
+/* 			r->propensity = p; */
+/* 			r->tau = gsl_ran_gamma(SSARNG, r->steps, 1 / p) + t; */
+/* 			pq_insert(pq, r); */
+/* 		} */
+/* 	} else if (r->propensity > 0.0) { */
+/* 		pq_delete(pq, r); */
+/* 	} */
+/* } */
+
+
+double ssa_nrmstep
+(INDEX n,
+ INDEX m,
+ INDEX **R,
+ INDEX **P,
+ double *propensities,
+ double *k,
+ COUNT *steps,
+ COUNT *x,
+ PQ *pq)
 {
+
 	REACTION *r = pq_min(pq);
-
-        double t = r->tau;
-
-        /* if (r->steps > 0) { */
-        /*         REACTION *delayed = reaction_make(); */
-        /*         delayed->propensity = r->delayrate; */
-        /*         delayed->tau = gsl_ran_gamma(SSARNG, r->steps, r->delayrate) + t; */
-        /*         delayed->steps = 1; */
-        /*         delayed->products = r->products; */
-        /*         delayed->reactants = malloc(sizeof(INDEX) * n); */
-        /*         int i; */
-        /*         for (i = 0; i < n; i++) */
-        /*                 delayed->reactants[i] = 0; */
-                
-        /*         pq_insert(pq, delayed); */
-        /* } else { */
-        nrm_doreaction(r, x, n);
-	r->propensity = nrm_h(r, x, n) * r->rate;
-	if (r->propensity > 0.0)
-		pq_update(pq, r, gsl_ran_gamma(SSARNG, r->propensity * r->steps, 1 / r->propensity) + t);
+        ssa_doreaction(R[r->number], P[r->number], x, n);
+	double t = r->tau;
+	
+	propensities[r->number] = ssa_h(R[r->number], x, n) * k[r->number];
+	if (propensities[r->number] > 0.0)
+		pq_update(pq, r, gsl_ran_gamma(SSARNG, steps[r->number], 1 / propensities[r->number]) + t);
 	else
 		pq_delete(pq, r);
 	
-
 	LLIST *head = r->affects;
 	while (head != NULL) {
 		REACTION *update = (REACTION *) head->data;
-		update_reaction(pq, update, x, n, t);
+		update_reaction(pq, update, R, propensities, k, steps, x, n, t);
 		head = head->next;
 	}
 
@@ -108,17 +106,13 @@ REACTION **setup_reactions(INDEX **R, INDEX **P, COUNT *steps, double *k, INDEX 
 	INDEX i, j;
 	for (i = 0; i < m; i++) {
 		REACTION *reaction = reaction_make(i);
-		reaction->rate = k[i];
-		reaction->reactants = R[i];
-		reaction->products = P[i];
-                reaction->steps = steps[i];
 		reactions[i] = reaction;
 	}
 	
 	for (i = 0; i < m; i++) {
 		REACTION *r = reactions[i];
 		for (j = 0; j < m; j++)
-			if (adjmat[i][j] != 0)
+			if (i != j && adjmat[i][j] != 0)
 				r->affects = llist_push(r->affects, reactions[j]);
 	}
 
@@ -132,31 +126,30 @@ REACTION **setup_reactions(INDEX **R, INDEX **P, COUNT *steps, double *k, INDEX 
 
 void ssa_nrm(INDEX **R, INDEX **P, INDEX n, INDEX m, double *k, COUNT *x, COUNT *steps, double T)
 {
-        N = n;
-        M = m;
 	gsl_rng_env_setup();
 	SSARNGT = gsl_rng_default;
 	SSARNG = gsl_rng_alloc(SSARNGT);
 	gsl_rng_set(SSARNG, time(NULL));
 
 	REACTION **reactions = setup_reactions(R, P, steps, k, n, m);
+	double *propensities = malloc(sizeof(double) * m);
 	
 	PQ *pq = pq_make();
 	INDEX i;
 	for (i = 0; i < m; i++) {
 		REACTION *r = reactions[i];
-		r->propensity = nrm_h(r, x, n) * k[i];
-		if (r->propensity > 0.0) {
-			r->tau = gsl_ran_gamma(SSARNG, steps[i], 1 / r->propensity);
+		propensities[i] = ssa_h(R[i], x, n) * k[i];
+		if (propensities[i] > 0.0) {
+			r->tau = gsl_ran_gamma(SSARNG, steps[i], 1 / propensities[i]);
 			pq_insert(pq, r);
 		}
 	}
 
-	printstate(0.0, x, n);
+	ssa_printstate(0.0, x, n);
 	
 	while(!pq_isempty(pq) && pq_min(pq)->tau < T){
-		double t = ssa_nrmstep(n, m, R, P, x, pq);
-		printstate(t, x, n);
+		double t = ssa_nrmstep(n, m, R, P, propensities, k, steps, x, pq);
+		ssa_printstate(t, x, n);
 	}
 
 	pq_free(pq);
