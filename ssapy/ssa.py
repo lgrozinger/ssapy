@@ -38,7 +38,8 @@ def nextreactionmethod(reactionnetwork, T):
     n = c_uint(len(reactionnetwork.X))
     m = c_uint(len(reactionnetwork.R))
     steps = wrap1d(reactionnetwork.steps, c_uint)
-    libssa.ssa_nrm(R, P, n, m, k, X, steps, c_double(T))
+    creates = wrap2d([[0] * len(reactionnetwork.R)] * len(reactionnetwork.R), c_uint)
+    libssa.ssa_nrm(R, P, n, m, k, X, steps, creates, creates, c_double(T))
 
 
 parser = argparse.ArgumentParser(description='Simulate chemical reaction networks.')

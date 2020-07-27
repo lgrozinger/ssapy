@@ -29,6 +29,8 @@ typedef struct reaction{
         INDEX number;
         int32_t heappos;
 	LLIST *affects;
+        LLIST *creates;
+        LLIST *destroys;
 } REACTION;
 
 
