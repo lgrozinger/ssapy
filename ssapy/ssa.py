@@ -3,8 +3,10 @@ import argparse
 import pathlib
 import os
 
-from networks import ReactionNetwork
 
+from networks import ReactionNetwork
+import dm
+import nrm
 
 libssa = CDLL('./libssa.so')
 
@@ -30,6 +32,10 @@ def directmethod(reactionnetwork, T):
     libssa.ssa_dm(R, P, n, m, k, X, c_double(T))
 
 
+def directmethodpy(reactionnetwork, T):
+    dm.dm(reactionnetwork.R, reactionnetwork.P, reactionnetwork.k, reactionnetwork.X, T)
+
+
 def nextreactionmethod(reactionnetwork, T):
     R = wrap2d(reactionnetwork.R, c_uint)
     P = wrap2d(reactionnetwork.P, c_uint)
@@ -42,17 +48,23 @@ def nextreactionmethod(reactionnetwork, T):
     libssa.ssa_nrm(R, P, n, m, k, X, steps, creates, creates, c_double(T))
 
 
+def nextreactionmethodpy(reactionnetwork, T):
+    nrm.nrm(reactionnetwork.R, reactionnetwork.P, reactionnetwork.k, reactionnetwork.X, T)
+
+
 parser = argparse.ArgumentParser(description='Simulate chemical reaction networks.')
 parser.add_argument('filename', help='File contained network specification')
 parser.add_argument('maxtime', type=float, help='The maximum simulated time') 
 parser.add_argument('--method', '-m',
                     default='dm',
-                    choices=['dm', 'nrm'],
+                    choices=['dm', 'nrm', 'dmpy', 'nrmpy'],
                     help='Select the simulation algorithm to use')
 
 methods = {
     'dm': directmethod,
-    'nrm': nextreactionmethod
+    'nrm': nextreactionmethod,
+    'dmpy': directmethodpy,
+    'nrmpy': nextreactionmethodpy
 }
 
 if __name__ == '__main__':
