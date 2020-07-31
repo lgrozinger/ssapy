@@ -106,16 +106,23 @@ void ssa_nrm(INDEX **R, INDEX **P, INDEX n, INDEX m, double *k, COUNT *x, COUNT 
 	gsl_rng_set(SSARNG, time(NULL));
 
         SYSTEM *s = malloc(sizeof(SYSTEM));
-        s->m = m;
+	s->m = m;
         s->n = n;
         s->R = R;
         s->P = P;
         s->creates = creates;
         s->destroys = destroys;
+
 	REACTION **reactions = setup_reactions(s);
 	double *propensities = malloc(sizeof(double) * m);
-	
 	PQ *pq = pq_make();
+
+        s->pq = pq;
+        s->x = x;
+        s->steps = steps;
+        s->k = k;
+        s->propensities = propensities;
+	
 	INDEX i;
 	for (i = 0; i < m; i++) {
 		REACTION *r = reactions[i];
@@ -127,12 +134,6 @@ void ssa_nrm(INDEX **R, INDEX **P, INDEX n, INDEX m, double *k, COUNT *x, COUNT 
 	}
 
 	ssa_printstate(0.0, x, n);
-
-        s->pq = pq;
-        s->x = x;
-        s->steps = steps;
-        s->k = k;
-        s->propensities = propensities;
 	
 	while(!pq_isempty(pq) && pq_min(pq)->tau < T)
 		ssa_printstate(ssa_nrmstep(s), x, n);
