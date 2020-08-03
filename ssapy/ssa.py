@@ -1,14 +1,11 @@
-from ctypes import *
+from ctypes import CDLL, c_uint, c_double, POINTER, pointer
 import argparse
-import pathlib
-import os
-
 
 from networks import ReactionNetwork
 import dm
 import nrm
 
-libssa = CDLL('./libssa.so')
+libssa = CDLL("./libssa.so")
 
 
 def wrap2d(array, ctype):
@@ -17,6 +14,7 @@ def wrap2d(array, ctype):
     for i, row in enumerate(array):
         a[i] = pointer((ctype * len(array[0]))(*row))
     return a
+
 
 def wrap1d(array, ctype):
     return (ctype * len(array))(*array)
@@ -49,27 +47,36 @@ def nextreactionmethod(reactionnetwork, T):
 
 
 def nextreactionmethodpy(reactionnetwork, T):
-    nrm.nrm(reactionnetwork.R, reactionnetwork.P, reactionnetwork.k, reactionnetwork.X, T)
+    nrm.nrm(
+        reactionnetwork.R,
+        reactionnetwork.P,
+        reactionnetwork.k,
+        [],
+        reactionnetwork.X,
+        T,
+    )
 
 
-parser = argparse.ArgumentParser(description='Simulate chemical reaction networks.')
-parser.add_argument('filename', help='File contained network specification')
-parser.add_argument('maxtime', type=float, help='The maximum simulated time') 
-parser.add_argument('--method', '-m',
-                    default='dm',
-                    choices=['dm', 'nrm', 'dmpy', 'nrmpy'],
-                    help='Select the simulation algorithm to use')
+parser = argparse.ArgumentParser(description="Simulate chemical reaction networks.")
+parser.add_argument("filename", help="File contained network specification")
+parser.add_argument("maxtime", type=float, help="The maximum simulated time")
+parser.add_argument(
+    "--method",
+    "-m",
+    default="dm",
+    choices=["dm", "nrm", "dmpy", "nrmpy"],
+    help="Select the simulation algorithm to use",
+)
 
 methods = {
-    'dm': directmethod,
-    'nrm': nextreactionmethod,
-    'dmpy': directmethodpy,
-    'nrmpy': nextreactionmethodpy
+    "dm": directmethod,
+    "nrm": nextreactionmethod,
+    "dmpy": directmethodpy,
+    "nrmpy": nextreactionmethodpy,
 }
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = parser.parse_args()
-    with open(args.filename, 'r') as script:
+    with open(args.filename, "r") as script:
         rn = ReactionNetwork.from_script(script.read())
         methods[args.method](rn, args.maxtime)
-

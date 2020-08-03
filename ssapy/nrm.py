@@ -1,15 +1,15 @@
 import operator
 from functools import reduce
-from numpy.random import exponential, random, choice
+from numpy.random import exponential
 from heapq import heappush, heapify, heappop
 
 
 def nCr(n, r):
-    r = min(r, n-r)
+    r = min(r, n - r)
     if r < 0:
         return 0
-    numer = reduce(operator.mul, range(n, n-r, -1), 1)
-    denom = reduce(operator.mul, range(1, r+1), 1)
+    numer = reduce(operator.mul, range(n, n - r, -1), 1)
+    denom = reduce(operator.mul, range(1, r + 1), 1)
     return numer // denom
 
 
@@ -22,6 +22,7 @@ class Entry:
         self.number = number
         self.affects = affects
         self.tau = tau
+        self.creates = creates
 
     def __lt__(self, other):
         return self.tau < other.tau
@@ -39,16 +40,19 @@ class Entry:
         return self.tau >= other.tau
 
 
-def nrm(R, P, k, X, T):
+def nrm(R, P, graph, k, steps, X, T):
+    reactions = [Entry(i, T, []) for i in range(len(R))]
     props = [0] * len(R)
     q = []
-    for i, r in enumerate(R):
-        props[i] = h(r, X) * k[i]
+    for i, reaction in enumerate(reactions):
+        props[i] = h(R[i], X) * k[i]
         if props[i] > 0.0:
-            tau = exponential(1 / props[i])
+            reaction.tau = exponential(1 / props[i])
         else:
-            tau = T
-        heappush(q, Entry(i, tau, []))
+            reaction.tau = T
+
+        reaction.affects = [reactions[r] for r in range(len(R)) if graph[i][r]]
+        heappush(q, reaction)
 
     while q and q[0].tau < T:
         reaction = heappop(q)
@@ -71,7 +75,7 @@ def nrm(R, P, k, X, T):
                 t = T
             x.tau = t
             props[j] = p
-            
+
         heapify(q)
         props[r] = h(R[r], X) * k[r]
         if props[r] > 0.0:

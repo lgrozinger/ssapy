@@ -1,4 +1,7 @@
+import operator
+
 from parse import parse
+
 
 
 class ReactionNetwork:
@@ -43,7 +46,7 @@ class ReactionNetwork:
 
     @property
     def R(self):
-        R = [[0] * len(self.species) for _ in range(len(self.reactions))]
+        R = [[0] * self.n for _ in range(self.m)]
         species_index = [x[0] for x in self.species]
         for i, (reactants, _, _, _) in enumerate(self.reactions):
             for reactant in reactants:
@@ -53,13 +56,34 @@ class ReactionNetwork:
 
     @property
     def P(self):
-        P = [[0] * len(self.species) for _ in range(len(self.reactions))]
+        P = [[0] * self.n for _ in range(self.m)]
         species_index = [x[0] for x in self.species]
         for i, (_, products, _, _) in enumerate(self.reactions):
             for product in products:
                 if isinstance(product, str):
                     P[i][species_index.index(product)] += 1
         return P
+
+    @property
+    def V(self):
+        return [[p - r for r, p in zip(self.R[i], self.P[i])] for i in range(self.m)]
+
+    @property
+    def m(self):
+        return len(self.reactions)
+
+    @property
+    def n(self):
+        return len(self.species)
+
+    @property
+    def adjmatrix(self):
+        graph = [[0] * self.m for _ in range(self.m)]
+        for i in range(self.m):
+            for j in range(self.m):
+                   if any(map(operator.and_, self.V[i], self.R[j])):
+                    graph[i][j] = 1
+        return graph
 
     @property
     def X(self):
