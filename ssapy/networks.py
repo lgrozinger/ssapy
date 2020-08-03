@@ -1,7 +1,6 @@
-import operator
+import operator as op
 
 from parse import parse
-
 
 
 class ReactionNetwork:
@@ -43,7 +42,6 @@ class ReactionNetwork:
             if name == identifier:
                 self.species[i] = (name, count)
 
-
     @property
     def R(self):
         R = [[0] * self.n for _ in range(self.m)]
@@ -66,7 +64,7 @@ class ReactionNetwork:
 
     @property
     def V(self):
-        return [[p - r for r, p in zip(self.R[i], self.P[i])] for i in range(self.m)]
+        return [list(map(op.sub, self.P[i], self.R[i])) for i in range(self.m)]
 
     @property
     def m(self):
@@ -81,7 +79,7 @@ class ReactionNetwork:
         graph = [[0] * self.m for _ in range(self.m)]
         for i in range(self.m):
             for j in range(self.m):
-                   if any(map(operator.and_, self.V[i], self.R[j])):
+                if any(map(op.and_, self.V[i], self.R[j])):
                     graph[i][j] = 1
         return graph
 

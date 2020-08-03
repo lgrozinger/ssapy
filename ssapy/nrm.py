@@ -55,31 +55,20 @@ def nrm(R, P, graph, k, steps, X, T):
         heappush(q, reaction)
 
     while q and q[0].tau < T:
-        reaction = heappop(q)
-        tau = reaction.tau
-        r = reaction.number
-        print(f"{tau:.6f} {' '.join([str(x) for x in X])}")
-        for i in range(len(R[r])):
-            X[i] = X[i] + P[r][i] - R[r][i]
+        r = q[0]
+        print(f"{r.tau:.6f} {' '.join([str(x) for x in X])}")
+        for i in range(len(R[r.number])):
+            X[i] += P[r.number][i] - R[r.number][i]
 
-        for i in range(len(q)):
-            x = q[i]
-            t = x.tau
-            j = x.number
-            p = h(R[j], X) * k[j]
-            if p > 0.0 and props[j] > 0.0:
-                t = (props[j] / p) * (t - tau) + tau
+        for s in r.affects:
+            p = h(R[s.number], X) * k[s.number]
+            if s.number == r.number and p > 0.0:
+                s.tau = exponential(1 / p) + r.tau
+            elif p > 0.0 and props[s.number] > 0.0:
+                s.tau = (props[s.number] / p) * (s.tau - r.tau) + r.tau
             elif p > 0.0:
-                t = (exponential(1 / p) + tau, j)
+                s.tau = exponential(1 / p) + r.tau
             else:
-                t = T
-            x.tau = t
-            props[j] = p
-
+                s.tau = T
+            props[s.number] = p
         heapify(q)
-        props[r] = h(R[r], X) * k[r]
-        if props[r] > 0.0:
-            reaction.tau = exponential(1 / props[r]) + tau
-        else:
-            reaction.tau = T
-        heappush(q, reaction)

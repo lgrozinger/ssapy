@@ -50,6 +50,7 @@ def nextreactionmethodpy(reactionnetwork, T):
     nrm.nrm(
         reactionnetwork.R,
         reactionnetwork.P,
+        reactionnetwork.adjmatrix,
         reactionnetwork.k,
         [],
         reactionnetwork.X,
