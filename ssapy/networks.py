@@ -28,13 +28,19 @@ class ReactionNetwork:
             self.species.append((identifier, 0))
 
     def addreaction(self, reactants, products, rate, steps=1):
+        creates = []
         for reactant in reactants:
-            self.addspecies(reactant)
-
+            if isinstance(reactant, str):
+                self.addspecies(reactant)
+                
         for product in products:
-            self.addspecies(product)
+            if isinstance(product, str):
+                self.addspecies(product)
+            else:
+                creates.append(self.addreaction(*product))
 
-        self.reactions.append((reactants, products, rate, steps))
+        self.reactions.append((reactants, products, creates, rate, steps))
+        return len(self.reactions) - 1
 
     def setspeciescount(self, identifier, count):
         self.addspecies(identifier)
@@ -46,7 +52,7 @@ class ReactionNetwork:
     def R(self):
         R = [[0] * self.n for _ in range(self.m)]
         species_index = [x[0] for x in self.species]
-        for i, (reactants, _, _, _) in enumerate(self.reactions):
+        for i, (reactants, _, _, _, _) in enumerate(self.reactions):
             for reactant in reactants:
                 if isinstance(reactant, str):
                     R[i][species_index.index(reactant)] += 1
@@ -56,7 +62,7 @@ class ReactionNetwork:
     def P(self):
         P = [[0] * self.n for _ in range(self.m)]
         species_index = [x[0] for x in self.species]
-        for i, (_, products, _, _) in enumerate(self.reactions):
+        for i, (_, products, _, _, _) in enumerate(self.reactions):
             for product in products:
                 if isinstance(product, str):
                     P[i][species_index.index(product)] += 1
@@ -65,6 +71,16 @@ class ReactionNetwork:
     @property
     def V(self):
         return [list(map(op.sub, self.P[i], self.R[i])) for i in range(self.m)]
+
+    @property
+    def creates(self):
+        graph = [[0] * self.m for _ in range(self.m)]
+        for i in range(self.m):
+            _, _, creates, _, _ = self.reactions[i]
+            for j in range(self.m):
+                if j in creates:
+                    graph[i][j] = 1
+        return graph
 
     @property
     def m(self):
@@ -89,8 +105,8 @@ class ReactionNetwork:
 
     @property
     def k(self):
-        return [rate for _, _, rate, _ in self.reactions]
+        return [rate for _, _, _, rate, _ in self.reactions]
 
     @property
     def steps(self):
-        return [step for _, _, _, step in self.reactions]
+        return [step for _, _, _, _, step in self.reactions]

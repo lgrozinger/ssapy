@@ -11,7 +11,7 @@ tokens = (
     )
 
 t_ignore = ' \t\n'
-literals = '+='
+literals = '+=()'
 
 def t_TOFROM(t):
     r'<=>'

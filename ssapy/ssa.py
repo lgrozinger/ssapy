@@ -5,7 +5,7 @@ from networks import ReactionNetwork
 import dm
 import nrm
 
-libssa = CDLL("./libssa.so")
+libssa = CDLL("libssa.so")
 
 
 def wrap2d(array, ctype):
@@ -52,7 +52,6 @@ def nextreactionmethodpy(reactionnetwork, T):
         reactionnetwork.P,
         reactionnetwork.adjmatrix,
         reactionnetwork.k,
-        [],
         reactionnetwork.X,
         T,
     )

@@ -21,33 +21,43 @@ def p_expr(p):
 
 
 def p_singlestepreaction(p):
-    """reaction : specieslist TO specieslist AT FLOATING"""
+    """reaction : stoich TO stoich AT FLOATING"""
     p[0] = (p[1], p[3], float(p[5]), 1)
 
 
 def p_multistepreaction(p):
-    """reaction : specieslist INTEGRAL TO specieslist AT FLOATING"""
+    """reaction : stoich INTEGRAL TO stoich AT FLOATING"""
     p[0] = (p[1], p[4], float(p[6]), int(p[2]))
 
 
 def p_reactiondbl(p):
-    """reaction : specieslist TOFROM specieslist AT FLOATING"""
+    """reaction : stoich TOFROM stoich AT FLOATING"""
     pass
 
 
-def p_specieslist(p):
-    """specieslist : specieslist '+' SPECIES"""
-    p[0] = p[1] + [p[3]]
+def p_stoich(p):
+    """stoich : stoichelem '+' stoich"""
+    p[0] = [p[1]] + p[3]
 
 
-def p_specieslist_1(p):
-    """specieslist : SPECIES"""
+def p_stoich1(p):
+    """stoich : stoichelem"""
     p[0] = [p[1]]
 
 
-def p_specieslist_empty(p):
-    """specieslist : EMPTYSET"""
+def p_stoich0(p):
+    """stoich : EMPTYSET"""
     p[0] = []
+
+
+def p_stoichreaction(p):
+    """stoichelem : '(' reaction ')'"""
+    p[0] = p[2]
+
+
+def p_stoichspecies(p):
+    """stoichelem : SPECIES"""
+    p[0] = p[1]
 
 
 def p_assignment(p):

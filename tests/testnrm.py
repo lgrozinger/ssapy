@@ -1,5 +1,6 @@
 import unittest
 import sys
+
 from numpy.random import seed
 import filecmp
 
