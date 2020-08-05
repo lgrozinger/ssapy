@@ -15,11 +15,11 @@ class TestNRM(unittest.TestCase):
 
     def testnrm(self):
         oldstdout = sys.stdout
-        with open('/tmp/testnrmresult', 'w') as f:
+        with open("/tmp/testnrmresult", "w") as f:
             sys.stdout = f
-            with open('../examples/lotkavolterra.txt') as script:
+            with open("../examples/lotkavolterra.txt") as script:
                 rn = networks.ReactionNetwork.from_script(script.read())
                 ssa.nextreactionmethodpy(rn, 0.1)
         sys.stdout = oldstdout
 
-        self.assertTrue(filecmp.cmp('/tmp/testnrmresult', '../examples/testnrmresult'))
+        self.assertTrue(filecmp.cmp("/tmp/testnrmresult", "../examples/testnrmresult"))

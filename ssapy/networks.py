@@ -1,6 +1,6 @@
 import operator as op
 
-from parse import parse
+from ssapy.parse import parse
 
 
 class ReactionNetwork:
@@ -32,7 +32,7 @@ class ReactionNetwork:
         for reactant in reactants:
             if isinstance(reactant, str):
                 self.addspecies(reactant)
-                
+
         for product in products:
             if isinstance(product, str):
                 self.addspecies(product)

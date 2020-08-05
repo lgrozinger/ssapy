@@ -1,11 +1,14 @@
 from ctypes import CDLL, c_uint, c_double, POINTER, pointer
 import argparse
+from pathlib import Path
 
-from networks import ReactionNetwork
-import dm
-import nrm
+from ssapy.networks import ReactionNetwork
+from ssapy.dm import dm
+from ssapy.nrm import nrm
 
-libssa = CDLL("libssa.so")
+
+sopath = Path(__file__).parent.parent / "libssa.so"
+libssa = CDLL(sopath.resolve())
 
 
 def wrap2d(array, ctype):
@@ -31,7 +34,7 @@ def directmethod(reactionnetwork, T):
 
 
 def directmethodpy(reactionnetwork, T):
-    dm.dm(reactionnetwork.R, reactionnetwork.P, reactionnetwork.k, reactionnetwork.X, T)
+    dm(reactionnetwork.R, reactionnetwork.P, reactionnetwork.k, reactionnetwork.X, T)
 
 
 def nextreactionmethod(reactionnetwork, T):
@@ -47,7 +50,7 @@ def nextreactionmethod(reactionnetwork, T):
 
 
 def nextreactionmethodpy(reactionnetwork, T):
-    nrm.nrm(
+    nrm(
         reactionnetwork.R,
         reactionnetwork.P,
         reactionnetwork.adjmatrix,

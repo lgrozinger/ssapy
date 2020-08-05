@@ -23,7 +23,7 @@ class Entry:
         self.affects = affects
         self.tau = tau
         self.creates = creates
-        
+
     def __lt__(self, other):
         return self.tau < other.tau
 
@@ -40,23 +40,46 @@ class Entry:
         return self.tau >= other.tau
 
 
-def reactionheap(propensities, graph, T):
-    reactions = [Entry(i, T, []) for i in range(len(propensities))]
+def linkreactions(reactions, graph, creates=None):
+    """Adds 'affects' and 'creates' links between the reactions
+    according to the adjacency matrices 'graph' and 'creates'."""
+    m = len(reactions)
+    if creates is None:
+        creates = [[0] * m for _ in range(m)]
+    for i in range(m):
+        for j in range(m):
+            reactions[i].affects = [r for r in reactions if graph[i][j]]
+            reactions[i].creates = [r for r in reactions if creates[i][j]]
+    return reactions
+
+
+def initialprops(R, X, k, steps=None):
+    """Returns the initial propensities of reactions. Multi-step
+    reactions are assumed to have propensity 0."""
+    m = len(k)
+    if steps is None:
+        steps = [1] * m
+    return [h(R[i], X) * k[i] if steps[i] == 1 else 0.0 for i in range(m)]
+
+
+def heapreactions(reactions, propensities, T):
+    """Constructs and returns the initial heap of reactions."""
     q = []
     for i, reaction in enumerate(reactions):
         if propensities[i] > 0.0:
             reaction.tau = exponential(1 / propensities[i])
         else:
             reaction.tau = T
-
-        reaction.affects = [r for r in reactions if graph[i][r.number]]
         heappush(q, reaction)
     return q
 
 
 def nrm(R, P, graph, k, X, T):
-    props = [h(R[i], X) * k[i] for i in range(len(R))]
-    q = reactionheap(props, graph, T)
+    m = len(k)
+    props = initialprops(R, X, k)
+    reactions = [Entry(i, T, []) for i in range(m)]
+    reactions = linkreactions(reactions, graph)
+    q = heapreactions(reactions, props, T)
 
     while q and q[0].tau < T:
         r = q[0]
@@ -78,13 +101,11 @@ def nrm(R, P, graph, k, X, T):
         heapify(q)
 
 
-def 
-
 def nrmdelay(R, P, graph, creates, k, steps, X, T):
     index = [Entry(i, T, []) for i in range(len(R))]
     props = [h(R[i], X) * k[i] if steps[i] == 1 else 0.0 for i in range(len(R))]
     q = reactionheap(props, graph, T)
-    
+
     while q and q[0].tau < T:
         r = q[0]
         print(f"{r.tau:.6f} {' '.join([str(x) for x in X])}")
