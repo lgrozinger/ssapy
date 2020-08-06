@@ -2,9 +2,11 @@ from ctypes import CDLL, c_uint, c_double, POINTER, pointer
 import argparse
 from pathlib import Path
 
-from ssapy.networks import ReactionNetwork
-from ssapy.dm import dm
-from ssapy.nrm import nrm
+
+from networks import ReactionNetwork
+from dm import dm
+from nrm import nrm
+from nrm import nrmdelay
 
 
 sopath = Path(__file__).parent.parent / "libssa.so"
@@ -60,6 +62,19 @@ def nextreactionmethodpy(reactionnetwork, T):
     )
 
 
+def nextreactionmethoddelaypy(reactionnetwork, T):
+    nrmdelay(
+        reactionnetwork.R,
+        reactionnetwork.P,
+        reactionnetwork.adjmatrix,
+        reactionnetwork.creates,
+        reactionnetwork.k,
+        reactionnetwork.steps,
+        reactionnetwork.X,
+        T,
+    )
+
+
 parser = argparse.ArgumentParser(description="Simulate chemical reaction networks.")
 parser.add_argument("filename", help="File contained network specification")
 parser.add_argument("maxtime", type=float, help="The maximum simulated time")
@@ -67,7 +82,7 @@ parser.add_argument(
     "--method",
     "-m",
     default="dm",
-    choices=["dm", "nrm", "dmpy", "nrmpy"],
+    choices=["dm", "nrm", "dmpy", "nrmpy", "nrmdelaypy"],
     help="Select the simulation algorithm to use",
 )
 
@@ -76,6 +91,7 @@ methods = {
     "nrm": nextreactionmethod,
     "dmpy": directmethodpy,
     "nrmpy": nextreactionmethodpy,
+    "nrmdelaypy": nextreactionmethoddelaypy
 }
 
 if __name__ == "__main__":

@@ -1,7 +1,8 @@
 import ply.yacc as yacc
 
-from ssapy.read import tokens
-from ssapy.read import build
+
+from read import tokens
+from read import build
 
 
 def p_exprs(p):

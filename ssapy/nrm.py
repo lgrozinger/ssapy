@@ -1,6 +1,6 @@
 import operator
 from functools import reduce
-from numpy.random import exponential
+from numpy.random import exponential, gamma
 from heapq import heappush, heapify
 
 
@@ -40,22 +40,17 @@ class Entry:
         return self.tau >= other.tau
 
 
-def linkreactions(reactions, graph, creates=None):
-    """Adds 'affects' and 'creates' links between the reactions
-    according to the adjacency matrices 'graph' and 'creates'."""
+def linkreactions(reactions, affects, creates=None):
     m = len(reactions)
     if creates is None:
         creates = [[0] * m for _ in range(m)]
     for i in range(m):
-        for j in range(m):
-            reactions[i].affects = [r for r in reactions if graph[i][j]]
-            reactions[i].creates = [r for r in reactions if creates[i][j]]
+        reactions[i].affects = [r for r in reactions if affects[i][r.number]]
+        reactions[i].creates = [r for r in reactions if creates[i][r.number]]
     return reactions
 
 
 def initialprops(R, X, k, steps=None):
-    """Returns the initial propensities of reactions. Multi-step
-    reactions are assumed to have propensity 0."""
     m = len(k)
     if steps is None:
         steps = [1] * m
@@ -63,7 +58,6 @@ def initialprops(R, X, k, steps=None):
 
 
 def heapreactions(reactions, propensities, T):
-    """Constructs and returns the initial heap of reactions."""
     q = []
     for i, reaction in enumerate(reactions):
         if propensities[i] > 0.0:
@@ -102,9 +96,11 @@ def nrm(R, P, graph, k, X, T):
 
 
 def nrmdelay(R, P, graph, creates, k, steps, X, T):
-    index = [Entry(i, T, []) for i in range(len(R))]
-    props = [h(R[i], X) * k[i] if steps[i] == 1 else 0.0 for i in range(len(R))]
-    q = reactionheap(props, graph, T)
+    m = len(k)
+    props = initialprops(R, X, k)
+    reactions = [Entry(i, T, []) for i in range(m)]
+    reactions = linkreactions(reactions, graph, creates)
+    q = heapreactions(reactions, props, T)
 
     while q and q[0].tau < T:
         r = q[0]
@@ -123,4 +119,17 @@ def nrmdelay(R, P, graph, creates, k, steps, X, T):
             else:
                 s.tau = T
             props[s.number] = p
+
+        for s in r.creates:
+            newone = Entry(s.number, T, s.affects, s.creates)
+            p = h(R[s.number], X) * k[s.number]
+            if p > 0.0:
+                newone.tau = gamma(steps[s.number], 1 / p) + r.tau
+            else:
+                newone.tau = T
+            props[s.number] = p
+            s.destroys.append(s)
+
+        if r.destroys is not None:
+            
         heapify(q)

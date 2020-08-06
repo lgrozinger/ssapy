@@ -1,6 +1,7 @@
 import operator as op
 
-from ssapy.parse import parse
+
+from parse import parse
 
 
 class ReactionNetwork:
