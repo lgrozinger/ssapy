@@ -23,6 +23,7 @@ class Entry:
         self.affects = affects
         self.tau = tau
         self.creates = creates
+        self.destroys = []
 
     def __lt__(self, other):
         return self.tau < other.tau
@@ -95,6 +96,17 @@ def nrm(R, P, graph, k, X, T):
         heapify(q)
 
 
+def reactionupdate(r, R, X, k, ps, t, T):
+    p = h(R[r.number], X) * k[r.number]
+    if p > 0.0 and ps[r.number] > 0.0:
+        r.tau = (ps[r.number] / p) * (r.tau - t) + t
+    elif p > 0.0:
+        r.tau = exponential(1 / p) + t
+    else:
+        r.tau = T
+    ps[r.number] = p
+
+
 def nrmdelay(R, P, graph, creates, k, steps, X, T):
     m = len(k)
     props = initialprops(R, X, k)
@@ -109,16 +121,15 @@ def nrmdelay(R, P, graph, creates, k, steps, X, T):
             X[i] += P[r.number][i] - R[r.number][i]
 
         for s in r.affects:
-            p = h(R[s.number], X) * k[s.number]
-            if s.number == r.number and p > 0.0:
-                s.tau = exponential(1 / p) + r.tau
-            elif p > 0.0 and props[s.number] > 0.0:
-                s.tau = (props[s.number] / p) * (s.tau - r.tau) + r.tau
-            elif p > 0.0:
-                s.tau = exponential(1 / p) + r.tau
+            if s.number == r.number:
+                p = h(R[r.number], X) * k[r.number]
+                if p > 0.0:
+                    r.tau = exponential(1 / p) + r.tau
+                else:
+                    r.tau = T
+                props[r.number] = p
             else:
-                s.tau = T
-            props[s.number] = p
+                reactionupdate(s, R, X, k, props, r.tau, T)
 
         for s in r.creates:
             newone = Entry(s.number, T, s.affects, s.creates)
@@ -130,6 +141,4 @@ def nrmdelay(R, P, graph, creates, k, steps, X, T):
             props[s.number] = p
             s.destroys.append(s)
 
-        if r.destroys is not None:
-            
         heapify(q)
