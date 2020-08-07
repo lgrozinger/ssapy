@@ -19,7 +19,7 @@ class TestNRM(unittest.TestCase):
             sys.stdout = f
             with open("../examples/lotkavolterra.txt") as script:
                 rn = networks.ReactionNetwork.from_script(script.read())
-                ssa.nextreactionmethodpy(rn, 0.1)
+                ssa.nextreactionmethodpy(rn, 0.5)
         sys.stdout = oldstdout
 
         self.assertTrue(filecmp.cmp("/tmp/testnrmresult", "../examples/testnrmresult"))

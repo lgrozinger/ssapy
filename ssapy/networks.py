@@ -98,6 +98,8 @@ class ReactionNetwork:
             for j in range(self.m):
                 if any(map(op.and_, self.V[i], self.R[j])):
                     graph[i][j] = 1
+                if i == j:
+                    graph[i][j] = 1
         return graph
 
     @property
