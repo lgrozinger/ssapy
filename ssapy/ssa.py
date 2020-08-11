@@ -56,7 +56,9 @@ def nextreactionmethodpy(reactionnetwork, T):
         reactionnetwork.R,
         reactionnetwork.P,
         reactionnetwork.adjmatrix,
+        reactionnetwork.creates,
         reactionnetwork.k,
+        reactionnetwork.steps,
         reactionnetwork.X,
         T,
     )
@@ -91,7 +93,7 @@ methods = {
     "nrm": nextreactionmethod,
     "dmpy": directmethodpy,
     "nrmpy": nextreactionmethodpy,
-    "nrmdelaypy": nextreactionmethoddelaypy
+    "nrmdelaypy": nextreactionmethoddelaypy,
 }
 
 if __name__ == "__main__":

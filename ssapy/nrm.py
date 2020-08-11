@@ -69,19 +69,31 @@ def heapreactions(reactions, propensities, T):
     return q
 
 
-def nrm(R, P, graph, k, steps, X, T):
+def doreaction(R, P, X, r):
+    newX = [X[i] + P[r][i] - R[r][i] for i in range(len(X))]
+    if all(map(lambda x: x >= 0, newX)):
+        for i in range(len(X)):
+            X[i] += P[r][i] - R[r][i]
+
+
+def bratsun(R, P, graph, creates, k, steps, X, T):
     m = len(k)
     props = initialprops(R, X, k)
     reactions = [Entry(i, T, []) for i in range(m)]
-    reactions = linkreactions(reactions, graph)
+    reactions = linkreactions(reactions, graph, creates)
     q = heapreactions(reactions, props, T)
+    dq = []
 
-    while q and q[0].tau < T:
-        r = q[0]
+    while (q and q[0].tau < T) or (dq and dq[0].tau < T):
+        if q and dq:
+            r = q[0] if q[0] < dq[0] else heappop(dq)
+        elif q:
+            r = q[0]
+        elif dq:
+            r = heappop(dq)
         t = r.tau
-        print(f"{r.tau:.6f} {' '.join([str(x) for x in X])}")
-        for i in range(len(R[r.number])):
-            X[i] += P[r.number][i] - R[r.number][i]
+        print(f"{r.tau:.6f} {' '.join([str(x) for x in X])} {len(dq)}")
+        doreaction(R, P, X, r.number)
 
         for s in r.affects:
             p = h(R[s.number], X) * k[s.number]
@@ -94,7 +106,55 @@ def nrm(R, P, graph, k, steps, X, T):
             else:
                 s.tau = T
             props[s.number] = p
+
+        for s in r.creates:
+            newone = Entry(s.number, T, s.affects, s.creates)
+            newone.tau = steps[s.number] + t
+            heappush(dq, newone)
+
         heapify(q)
+
+
+def nrm(R, P, graph, creates, k, steps, X, T):
+    m = len(k)
+    props = initialprops(R, X, k)
+    reactions = [Entry(i, T, []) for i in range(m)]
+    reactions = linkreactions(reactions, graph, creates)
+    q = heapreactions(reactions, props, T)
+    dq = []
+    stats = open("stats", "w")
+
+    while (q and q[0].tau < T) or (dq and dq[0].tau < T):
+        if q and dq:
+            r = q[0] if q[0] < dq[0] else heappop(dq)
+        elif q:
+            r = q[0]
+        elif dq:
+            r = heappop(dq)
+        t = r.tau
+        print(f"{r.tau:.6f} {' '.join([str(x) for x in X])} {len(dq)}")
+        doreaction(R, P, X, r.number)
+
+        for s in r.affects:
+            p = h(R[s.number], X) * k[s.number]
+            if s.number == r.number and p > 0.0:
+                s.tau = exponential(1 / p) + t
+            elif p > 0.0 and props[s.number] > 0.0:
+                s.tau = (props[s.number] / p) * (s.tau - t) + t
+            elif p > 0.0:
+                s.tau = exponential(1 / p) + t
+            else:
+                s.tau = T
+            props[s.number] = p
+
+        for s in r.creates:
+            newone = Entry(s.number, T, s.affects, s.creates)
+            newone.tau = gamma(steps[s.number], 1 / k[s.number]) + t
+            print(newone.tau - t, file=stats)
+            heappush(dq, newone)
+
+        heapify(q)
+    stats.close()
 
 
 def reactionupdate(r, R, X, k, ps, t, T):
@@ -124,9 +184,7 @@ def nrmdelay(R, P, graph, creates, k, steps, X, T):
             f"{r.tau:.6f} {' '.join([str(x) for x in X])} {' '.join([str(m) for m in M])}"
         )
 
-        for i in range(len(R[r.number])):
-            X[i] += P[r.number][i] - R[r.number][i]
-
+        doreaction(R, P, X, r.number)
         for s in r.destroys:
             s.tau = 0.0
             heapify(q)
@@ -144,14 +202,15 @@ def nrmdelay(R, P, graph, creates, k, steps, X, T):
             else:
                 reactionupdate(s, R, X, k, props, t, T)
 
-        for s in r.creates:
-            newone = Entry(s.number, T, s.affects, s.creates)
+        newones = [Entry(s.number, T, s.affects, s.creates) for s in r.creates]
+
+        for s in newones:
             p = h(R[s.number], X) * k[s.number]
             if p > 0.0:
-                newone.tau = gamma(steps[s.number], 1 / p) + r.tau
+                s.tau = gamma(steps[s.number], 1 / p) + r.tau
             props[s.number] = p
-            newone.destroys.append(newone)
+            s.destroys = newones
             M[s.number] += 1
-            heappush(q, newone)
+            heappush(q, s)
 
         heapify(q)
