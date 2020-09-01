@@ -84,6 +84,7 @@ def bratsun(R, P, graph, creates, k, steps, X, T):
     q = heapreactions(reactions, props, T)
     dq = []
 
+    print(f"{0.0:.6f} {' '.join([str(x) for x in X])} {len(dq)}")
     while (q and q[0].tau < T) or (dq and dq[0].tau < T):
         if q and dq:
             r = q[0] if q[0] < dq[0] else heappop(dq)
@@ -92,8 +93,8 @@ def bratsun(R, P, graph, creates, k, steps, X, T):
         elif dq:
             r = heappop(dq)
         t = r.tau
-        print(f"{r.tau:.6f} {' '.join([str(x) for x in X])} {len(dq)}")
         doreaction(R, P, X, r.number)
+        print(f"{r.tau:.6f} {' '.join([str(x) for x in X])} {len(dq)}")
 
         for s in r.affects:
             p = h(R[s.number], X) * k[s.number]
@@ -123,6 +124,7 @@ def nrm(R, P, graph, creates, k, steps, X, T):
     q = heapreactions(reactions, props, T)
     dq = []
     stats = open("stats", "w")
+    print(f"{0.0:.6f} {' '.join([str(x) for x in X])} {len(dq)}")
 
     while (q and q[0].tau < T) or (dq and dq[0].tau < T):
         if q and dq:
@@ -132,8 +134,8 @@ def nrm(R, P, graph, creates, k, steps, X, T):
         elif dq:
             r = heappop(dq)
         t = r.tau
-        print(f"{r.tau:.6f} {' '.join([str(x) for x in X])} {len(dq)}")
         doreaction(R, P, X, r.number)
+        print(f"{r.tau:.6f} {' '.join([str(x) for x in X])} {len(dq)}")
 
         for s in r.affects:
             p = h(R[s.number], X) * k[s.number]
@@ -175,16 +177,17 @@ def nrmdelay(R, P, graph, creates, k, steps, X, T):
     reactions = [Entry(i, T, []) for i in range(m)]
     reactions = linkreactions(reactions, graph, creates)
     q = heapreactions(reactions, props, T)
+    print(f"{0.0:.6f} {' '.join([str(x) for x in X])} {' '.join([str(m) for m in M])}")
 
     while q and q[0].tau < T:
         r = q[0]
         t = r.tau
 
+        doreaction(R, P, X, r.number)
         print(
             f"{r.tau:.6f} {' '.join([str(x) for x in X])} {' '.join([str(m) for m in M])}"
         )
 
-        doreaction(R, P, X, r.number)
         for s in r.destroys:
             s.tau = 0.0
             heapify(q)

@@ -3,14 +3,13 @@ import argparse
 from pathlib import Path
 
 
-from networks import ReactionNetwork
-from dm import dm
-from nrm import nrm
-from nrm import nrmdelay
+from ssapy.networks import ReactionNetwork
+from ssapy.dm import dm
+from ssapy.nrm import nrm
+from ssapy.nrm import nrmdelay
 
 
-sopath = Path(__file__).parent.parent / "libssa.so"
-libssa = CDLL(sopath.resolve())
+libssa = CDLL("libssa.so")
 
 
 def wrap2d(array, ctype):
@@ -35,7 +34,19 @@ def directmethod(reactionnetwork, T):
     libssa.ssa_dm(R, P, n, m, k, X, c_double(T))
 
 
+def directmethoddelay(reactionnetwork, T):
+    R = wrap2d(reactionnetwork.R, c_uint)
+    P = wrap2d(reactionnetwork.P, c_uint)
+    I = wrap2d(reactionnetwork.creates, c_uint)
+    X = wrap1d(reactionnetwork.X, c_uint)
+    k = wrap1d(reactionnetwork.k, c_double)
+    n = c_uint(len(reactionnetwork.X))
+    m = c_uint(len(reactionnetwork.R))
+    libssa.ssa_dmd(R, P, I, n, m, k, X, c_double(T))
+
+
 def directmethodpy(reactionnetwork, T):
+    print(f"TIME {' '.join([s[0] for s in reactionnetwork.species])}")
     dm(reactionnetwork.R, reactionnetwork.P, reactionnetwork.k, reactionnetwork.X, T)
 
 
@@ -51,7 +62,20 @@ def nextreactionmethod(reactionnetwork, T):
     libssa.ssa_nrm(R, P, n, m, k, X, steps, creates, creates, c_double(T))
 
 
+def nextreactionmethoddelay(reactionnetwork, T):
+    R = wrap2d(reactionnetwork.R, c_uint)
+    P = wrap2d(reactionnetwork.P, c_uint)
+    X = wrap1d(reactionnetwork.X, c_uint)
+    k = wrap1d(reactionnetwork.k, c_double)
+    n = c_uint(len(reactionnetwork.X))
+    m = c_uint(len(reactionnetwork.R))
+    steps = wrap1d(reactionnetwork.steps, c_uint)
+    creates = wrap2d([[0] * len(reactionnetwork.R)] * len(reactionnetwork.R), c_uint)
+    libssa.ssa_nrmd(R, P, creates, n, m, k, steps, X, c_double(T))
+
+
 def nextreactionmethodpy(reactionnetwork, T):
+    print(f"TIME {' '.join([s[0] for s in reactionnetwork.species])}")
     nrm(
         reactionnetwork.R,
         reactionnetwork.P,
@@ -65,6 +89,7 @@ def nextreactionmethodpy(reactionnetwork, T):
 
 
 def nextreactionmethoddelaypy(reactionnetwork, T):
+    print(f"TIME {' '.join([s[0] for s in reactionnetwork.species])}")
     nrmdelay(
         reactionnetwork.R,
         reactionnetwork.P,
@@ -75,29 +100,3 @@ def nextreactionmethoddelaypy(reactionnetwork, T):
         reactionnetwork.X,
         T,
     )
-
-
-parser = argparse.ArgumentParser(description="Simulate chemical reaction networks.")
-parser.add_argument("filename", help="File contained network specification")
-parser.add_argument("maxtime", type=float, help="The maximum simulated time")
-parser.add_argument(
-    "--method",
-    "-m",
-    default="dm",
-    choices=["dm", "nrm", "dmpy", "nrmpy", "nrmdelaypy"],
-    help="Select the simulation algorithm to use",
-)
-
-methods = {
-    "dm": directmethod,
-    "nrm": nextreactionmethod,
-    "dmpy": directmethodpy,
-    "nrmpy": nextreactionmethodpy,
-    "nrmdelaypy": nextreactionmethoddelaypy,
-}
-
-if __name__ == "__main__":
-    args = parser.parse_args()
-    with open(args.filename, "r") as script:
-        rn = ReactionNetwork.from_script(script.read())
-        methods[args.method](rn, args.maxtime)

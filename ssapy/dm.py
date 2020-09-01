@@ -20,7 +20,7 @@ def dm(R, P, k, X, T):
     t = 0.0
     props = [h(r, X) * k[i] for i, r in enumerate(R)]
     a0 = sum(props)
-    
+
     while t < T and a0 > 0.0:
         print(f"{t:.6f} {' '.join(map(str, X))}")
         deltat = exponential(1 / a0)
@@ -33,6 +33,3 @@ def dm(R, P, k, X, T):
         for i in range(len(props)):
             props[i] = h(R[i], X) * k[i]
         a0 = sum(props)
-
-        
-    

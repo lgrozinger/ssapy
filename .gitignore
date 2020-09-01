@@ -1,0 +1,10 @@
+*
+!.gitignore
+!*.py
+!*.txt
+!**/**/*.py
+!**/**/*.txt
+!LICENSE
+!README.md
+!setup.py
+
